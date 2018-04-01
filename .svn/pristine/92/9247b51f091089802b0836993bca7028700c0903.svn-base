@@ -1,0 +1,285 @@
+//
+//  XWDetailContentController.m
+//  新闻
+//
+//  Created by user on 15/10/3.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWDetailContentController.h"
+#import "XWConstomNavBar.h"
+#import "XWNewsModel.h"
+#import "XWDetailModel.h"
+#import "XWDetailImgModel.h"
+#import "XWHttpTool.h"
+#import "XWReplyController.h"
+#import "XWReplyModel.h"
+
+@interface XWDetailContentController ()<UIWebViewDelegate>
+
+//内容详情模型
+@property (nonatomic,strong) XWDetailModel *detailModel;
+
+/* 
+ 自定义的导航条view
+ */
+@property (nonatomic,weak) XWConstomNavBar *navBar;
+
+//webview浏览器   用于显示网页
+@property (nonatomic,weak) UIWebView *webView;
+//返回按钮
+@property (nonatomic,weak)  UIButton *backBtn;
+//回复按钮
+@property (nonatomic,weak)  UIButton *replyBtn;
+
+//存放评论模型的数组
+@property (nonatomic,strong) NSMutableArray *replyArr;
+
+
+@end
+
+@implementation XWDetailContentController
+
+-(NSMutableArray *)replyArr
+{
+    if(_replyArr==nil){
+        _replyArr=[NSMutableArray array];
+    }
+    return _replyArr;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+  
+    //1.设置状态栏颜色
+    self.view.backgroundColor=[UIColor whiteColor];
+
+    //2.添加导航栏上面的子元素
+    [self addChild];
+    //3.添加webView
+    [self setupWebView];
+    //4.发送网络请求
+    [self setupRequest];
+    //5.网络评论发送请求
+    [self setupCommentRequest];
+   
+
+}
+
+/*
+ *  添加子元素
+ */
+
+-(void)addChild
+{
+    //1.添加自定义的导航栏
+    XWConstomNavBar *navBar=[[XWConstomNavBar alloc]init];
+    [self.view addSubview:navBar];
+    self.navBar=navBar;
+    //2.在自定义的导航栏上面添加按钮
+    UIButton *backBtn=[[UIButton alloc]init];
+    //icon_back_highlighted
+    [backBtn setImage:[UIImage imageNamed:@"icon_back"] forState:UIControlStateNormal];
+     [backBtn setImage:[UIImage imageNamed:@"icon_back_highlighted"] forState:UIControlStateHighlighted];
+    backBtn.frame=CGRectMake(0, (64-backBtn.currentImage.size.height), backBtn.currentImage.size.width, backBtn.currentImage.size.height);
+    [self.navBar addSubview:backBtn];
+    self.backBtn=backBtn;
+    [backBtn addTarget:self action:@selector(back) forControlEvents:UIControlEventTouchUpInside];
+    //3.添加回复按钮
+    UIButton *replyBtn=[[UIButton alloc]init];
+    [replyBtn setBackgroundImage: [UIImage resizedImage:@"contentview_commentbacky" left:0.5 top:0.5] forState:UIControlStateNormal];
+    [replyBtn setBackgroundImage:[UIImage resizedImage:@"contentview_commentbacky_selected"] forState:UIControlStateHighlighted];
+    [replyBtn setTitle:self.newsModel.replyCount forState:UIControlStateNormal];
+    replyBtn.titleLabel.font=[UIFont systemFontOfSize:13];
+    replyBtn.titleEdgeInsets=UIEdgeInsetsMake(0, -5, 0, 5);
+    
+    CGSize replyS=[self.newsModel.replyCount sizeWithAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:13]}];
+    CGFloat replyW=replyS.width+20;
+    CGFloat replyH=replyS.height+25;
+    CGFloat replyX=navBar.width-replyW;
+    CGFloat replyY=navBar.height-replyH;
+    replyBtn.frame=CGRectMake(replyX, replyY, replyW, replyH);
+    //点击事件
+    [replyBtn addTarget:self action:@selector(replyClick) forControlEvents:UIControlEventTouchUpInside];
+    [self.navBar addSubview:replyBtn];
+    self.replyBtn=replyBtn;
+}
+
+
+#pragma mark 添加webView
+-(void)setupWebView
+{
+    UIWebView *webView=[[UIWebView alloc]init];
+    webView.backgroundColor=[UIColor whiteColor];
+    webView.delegate=self;
+    webView.x=0;
+    webView.y=self.navBar.height;
+    webView.width=self.view.width;
+    webView.height=self.view.height-self.navBar.height;
+    [self.view insertSubview:webView atIndex:1];
+    self.webView=webView;
+  //  NSLog(@"%@",NSStringFromCGRect(self.navBar.frame));
+}
+#pragma mark 发送网络请求
+-(void)setupRequest
+{
+     [MBProgressHUD showHUDAddedTo:self.view animated:YES];
+    NSString *url = [NSString stringWithFormat:@"http://c.m.163.com/nc/article/%@/full.html",self.newsModel.docid];
+    
+    [XWHttpTool getDetailWithUrl:url parms:nil success:^(id json) {
+        //把数据转成模型
+        self.detailModel=[XWDetailModel initWithDict:json[self.newsModel.docid]];
+        //webView加载网页数据
+        [self loadWebViewData];
+        [MBProgressHUD hideHUDForView:self.view animated:YES];
+    } failture:^(id error) {
+        NSLog(@"%@",error);
+         [MBProgressHUD hideHUDForView:self.view animated:YES];
+    }];
+}
+
+#pragma mark webView加载网页数据
+-(void)loadWebViewData
+{
+    NSMutableString *html = [NSMutableString string];
+    [html appendString:@"<html>"];
+    [html appendString:@"<head>"];
+    [html appendFormat:@"<link rel=\"stylesheet\" href=\"%@\">",[[NSBundle mainBundle] URLForResource:@"detail.css" withExtension:nil]];
+    [html appendString:@"</head>"];
+    
+    [html appendString:@"<body>"];
+    //添加新闻内容
+    [html appendString:[self addBody]];
+    [html appendString:@"</body>"];
+    
+    [html appendString:@"</html>"];
+    
+    [self.webView loadHTMLString:html baseURL:nil];
+}
+
+- (NSString *)addBody
+{
+    NSMutableString *body = [NSMutableString string];
+    [body appendFormat:@"<div class=\"title\">%@</div>",self.detailModel.title];
+    [body appendFormat:@"<div class=\"time\">%@ &nbsp;&nbsp %@</div>",self.detailModel.ptime,self.detailModel.source];
+    
+    if (self.detailModel.body != nil) {
+        [body appendString:self.detailModel.body];
+    }
+    // 遍历img
+    for (XWDetailImgModel *detailImgModel in self.detailModel.img) {
+        NSMutableString *imgHtml = [NSMutableString string];
+        
+        // 设置img的div
+        [imgHtml appendString:@"<div class=\"img-parent\">"];
+        
+        // 数组存放被切割的像素
+        NSArray *pixel = [detailImgModel.pixel componentsSeparatedByString:@"*"];
+        CGFloat width = [[pixel firstObject]floatValue];
+        CGFloat height = [[pixel lastObject]floatValue];
+        // 判断是否超过最大宽度
+        CGFloat maxWidth = [UIScreen mainScreen].bounds.size.width * 0.96;
+        if (width > maxWidth) {
+            height = maxWidth / width * height;
+            width = maxWidth;
+        }
+        
+        NSString *onload = @"this.onclick = function() {"
+        "  window.location.href = 'sx:src=' +this.src;"
+        "};";
+        [imgHtml appendFormat:@"<img onload=\"%@\" width=\"%f\" height=\"%f\" src=\"%@\">",onload,width,height,detailImgModel.src];
+        // 结束标记
+        [imgHtml appendString:@"</div>"];
+        // 替换标记
+        [body replaceOccurrencesOfString:detailImgModel.ref withString:imgHtml options:NSCaseInsensitiveSearch range:NSMakeRange(0, body.length)];
+    }
+    return body;
+}
+
+
+#pragma mark 发送网络评论的网络请求
+-(void)setupCommentRequest
+{
+
+    NSString *url2 = [NSString stringWithFormat:@"http://comment.api.163.com/api/json/post/list/new/hot/%@/%@/0/10/10/2/2",self.newsModel.boardid,self.newsModel.docid];
+   // NSLog(@"%@",url2);
+    [XWHttpTool getDetailWithUrl:url2 parms:nil success:^(id json) {
+        
+        if(json[@"hotPosts"]!=[NSNull null]){
+            for(NSDictionary *dict in json[@"hotPosts"]){
+                XWReplyModel *replyModel=[[XWReplyModel alloc]init];
+                
+                replyModel.name=dict[@"1"][@"u"]?dict[@"1"][@"u"]:nil;
+                if(dict[@"1"][@"u"]){
+                    replyModel.name=@"火星网友";
+                }
+                replyModel.address=dict[@"1"][@"f"]?dict[@"1"][@"f"]:nil;
+                replyModel.say=dict[@"1"][@"b"]?dict[@"1"][@"b"]:nil;
+                
+                if(dict[@"1"][@"v"]){
+                    replyModel.suppose=dict[@"1"][@"v"];
+                }
+                
+                //把模型添加到数组
+                [self.replyArr addObject:replyModel];
+                            //NSLog(@"%@",dict[@"1"][@"v"]);
+            }
+        }
+        
+        
+    } failture:^(id error) {
+        NSLog(@"网络评论----->%@",error);
+    }];
+}
+
+/*
+ *  webView的代理方法
+ */
+
+
+-(BOOL)webView:(UIWebView *)webView shouldStartLoadWithRequest:(NSURLRequest *)request navigationType:(UIWebViewNavigationType)navigationType
+{
+    return YES;
+}
+
+/*
+ *  点击返回按钮的时候
+ */
+
+-(void)back
+{
+    [self.navigationController popViewControllerAnimated:YES];
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    
+    [self.navigationController setNavigationBarHidden:YES animated:YES];
+    UIApplication *app = [UIApplication sharedApplication];
+    app.statusBarStyle = UIStatusBarStyleDefault;
+}
+
+
+
+#pragma mark 评论按钮点击的时候
+
+-(void)replyClick
+{
+    XWReplyController *reply=[[XWReplyController alloc]init];
+    reply.replys=self.replyArr;
+   // NSLog(@"%@",self.replyArr);
+     [self.navigationController pushViewController:reply animated:YES];
+   
+}
+
+-(void)dealloc
+{
+    //在控制器销毁的时候 设置回颜色
+    UIApplication *app = [UIApplication sharedApplication];
+    app.statusBarStyle = UIStatusBarStyleLightContent;
+    
+}
+
+
+@end

@@ -1,0 +1,128 @@
+//
+//  XWNewsShowController.m
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWNewsShowController.h"
+#import "XWHttpTool.h"
+#import "XWNewsModel.h"
+
+@interface XWNewsShowController ()
+
+@property(nonatomic,strong) NSMutableArray *arrayList;
+
+@end
+
+@implementation XWNewsShowController
+
+-(NSMutableArray *)arrayList
+{
+    if(_arrayList==nil){
+        _arrayList= [NSMutableArray array];
+    }
+    return _arrayList;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+   
+    [self.tableView addHeaderWithTarget:self action:@selector(loadData)];
+    [self.tableView addFooterWithTarget:self action:@selector(loaMoreData)];
+  
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    //开始刷新
+    [self.tableView headerBeginRefreshing];
+  
+}
+
+- (void)setUrlString:(NSString *)urlString
+{
+    _urlString = urlString;
+}
+
+/*
+   下拉刷新
+ */
+-(void)loadData
+{
+    NSString *url = [NSString stringWithFormat:@"/nc/article/%@/0-20.html",self.urlString];
+    [self loadDataForType:1 withURL:url];
+}
+
+/*
+ ***  上啦加载更多的数据
+ */
+-(void)loaMoreData
+{
+    
+}
+
+// ------公共方法
+- (void)loadDataForType:(int)type withURL:(NSString *)url
+{
+    
+    [XWHttpTool getWithUrl:url parms:nil success:^(id json) {
+        NSDictionary *dict=(NSDictionary*)json;
+        NSString *key=[dict.keyEnumerator nextObject];
+        NSArray *tempArr=dict[key];
+        
+        //objectArrayWithKeyValuesArray
+        NSArray *arrModel=[XWNewsModel objectArrayWithKeyValuesArray:tempArr];
+        
+        //下拉刷新的方法
+        if(type==1){
+            
+            self.arrayList=[arrModel mutableCopy];
+            [self.tableView headerEndRefreshing];
+            [self.tableView reloadData];
+            
+        }else if(type==2){  //上啦刷新
+            [self.arrayList addObjectsFromArray:arrModel];
+            [self.tableView footerEndRefreshing];
+            [self.tableView reloadData];
+        }
+        
+    } failture:^(id error) {
+        NSLog(@"%@",error);
+    }];
+}
+
+#pragma mark 返回多少行
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.arrayList.count;
+}
+#pragma mark 返回表格单元
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    UITableViewCell *cell=[tableView dequeueReusableCellWithIdentifier:@"cell"];
+    if(cell==nil){
+        cell=[[UITableViewCell alloc]initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
+    }
+    return cell;;
+}
+
+#pragma mark 行高
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    return 60;
+}
+
+/****  单元个的点击事件  **/
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // 刚选中又马上取消选中，格子不变色
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+  
+    
+}
+
+@end

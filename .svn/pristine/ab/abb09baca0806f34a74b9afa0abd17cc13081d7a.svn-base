@@ -1,0 +1,13 @@
+//
+//  XWDataCacheTool.m
+//  新闻
+//
+//  Created by user on 15/10/5.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWDataCacheTool.h"
+
+@implementation XWDataCacheTool
+
+@end

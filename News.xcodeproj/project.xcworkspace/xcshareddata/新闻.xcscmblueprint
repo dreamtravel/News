@@ -1,0 +1,24 @@
+{
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyRepositoryLocationsKey" : {
+    "2abba3b2-cec0-d940-a620-b791841eb869++6587" : {
+
+    }
+  },
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyStatesKey" : {
+    "2abba3b2-cec0-d940-a620-b791841eb869++6587" : 0
+  },
+  "DVTSourceControlWorkspaceBlueprintIdentifierKey" : "1A375881-445F-4F54-A162-FD23E026B344",
+  "DVTSourceControlWorkspaceBlueprintWorkingCopyPathsKey" : {
+    "2abba3b2-cec0-d940-a620-b791841eb869++6587" : "%E6%96%B0%E9%97%BB%202\/"
+  },
+  "DVTSourceControlWorkspaceBlueprintNameKey" : "新闻",
+  "DVTSourceControlWorkspaceBlueprintVersion" : 204,
+  "DVTSourceControlWorkspaceBlueprintRelativePathToProjectKey" : "新闻.xcodeproj",
+  "DVTSourceControlWorkspaceBlueprintRemoteRepositoriesKey" : [
+    {
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryURLKey" : "http:\/\/zxo785gofzxao1k\/svn\/news",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositorySystemKey" : "com.apple.dt.Xcode.sourcecontrol.Subversion",
+      "DVTSourceControlWorkspaceBlueprintRemoteRepositoryIdentifierKey" : "2abba3b2-cec0-d940-a620-b791841eb869++6587"
+    }
+  ]
+}

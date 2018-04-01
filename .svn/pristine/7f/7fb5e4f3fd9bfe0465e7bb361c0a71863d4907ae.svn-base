@@ -1,0 +1,196 @@
+//
+//  XWNewsShowController.m
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWNewsShowController.h"
+#import "XWHttpTool.h"
+#import "XWNewsModel.h"
+#import "XWNewsFrameModel.h"
+#import "XWNewsCell.h"
+#import "XWDetailContentController.h"
+#import "XWPhotoController.h"
+
+@interface XWNewsShowController ()
+
+@property(nonatomic,strong) NSMutableArray *arrayList;
+@property(nonatomic,assign)BOOL update;
+
+@end
+
+@implementation XWNewsShowController
+
+-(NSMutableArray *)arrayList
+{
+    if(_arrayList==nil){
+        _arrayList= [NSMutableArray array];
+    }
+    return _arrayList;
+}
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    self.tableView.separatorStyle=UITableViewCellSeparatorStyleNone;
+    self.update = YES;
+    [self.tableView addHeaderWithTarget:self action:@selector(loadData)];
+    [self.tableView addFooterWithTarget:self action:@selector(loaMoreData)];
+  
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    [self.navigationController setNavigationBarHidden:NO animated:YES];
+    //开始刷新
+    if (self.update == YES) {
+        [self.tableView headerBeginRefreshing];
+        self.update = NO;
+    }
+    
+  
+}
+
+- (void)setUrlString:(NSString *)urlString
+{
+    _urlString = urlString;
+}
+
+/*
+   下拉刷新
+ */
+-(void)loadData
+{
+    NSString *url = [NSString stringWithFormat:@"/nc/article/%@/0-20.html",self.urlString];
+    [self loadDataForType:1 withURL:url];
+}
+
+/*
+ ***  上啦加载更多的数据
+ */
+-(void)loaMoreData
+{
+    NSString *url = [NSString stringWithFormat:@"/nc/article/%@/%ld-20.html",self.urlString,(NSInteger)(self.arrayList.count - self.arrayList.count%10)];
+  
+    [self loadDataForType:2 withURL:url];
+}
+
+// ------公共方法
+- (void)loadDataForType:(int)type withURL:(NSString *)url
+{
+    
+    [XWHttpTool getWithUrl:url parms:nil success:^(id json) {
+        NSDictionary *dict=(NSDictionary*)json;
+        NSString *key=[dict.keyEnumerator nextObject];
+        NSArray *tempArr=dict[key];
+        
+        //objectArrayWithKeyValuesArray
+        NSArray *arrModel=[XWNewsModel objectArrayWithKeyValuesArray:tempArr];
+        
+        //下拉刷新的方法
+        if(type==1){
+         
+            for(XWNewsModel *newModel in arrModel){
+                //不包括头部新闻的全部数据 (第一个数据是头数据)
+               
+                    XWNewsFrameModel *frameModel=[[XWNewsFrameModel alloc]init];
+                    frameModel.newsModel=newModel;
+                    [self.arrayList addObject:frameModel];
+             
+            }
+            [self.tableView headerEndRefreshing];
+            [self.tableView reloadData];
+            
+        }else if(type==2){  //上啦刷新
+            
+            NSMutableArray *temp=[NSMutableArray array];
+             for(XWNewsModel *newModel in arrModel){
+                 XWNewsFrameModel *frameModel=[[XWNewsFrameModel alloc]init];
+                 frameModel.newsModel=newModel;
+                 [temp addObject:frameModel];
+             }
+            [self.arrayList addObjectsFromArray:temp];
+            
+            [self.tableView footerEndRefreshing];
+            [self.tableView reloadData];
+        }
+        
+    } failture:^(id error) {
+        [self.tableView headerEndRefreshing];
+        [self.tableView footerEndRefreshing];
+        NSLog(@"%@",error);
+    }];
+}
+
+#pragma mark 返回多少行
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
+{
+    return self.arrayList.count;
+}
+#pragma mark 返回表格单元
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    XWNewsFrameModel *frameModel=self.arrayList[indexPath.row];
+
+    
+    XWNewsCell *cell=[XWNewsCell cellWithTableView:tableView indextifier:@"newshow"];
+    cell.frameModel=frameModel;
+    
+    return cell;
+
+}
+
+#pragma mark 行高
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    XWNewsFrameModel *frameModel=self.arrayList[indexPath.row];
+    return frameModel.cellH;
+}
+
+/** 预估行高，这个方法可以减少上面方法的调用次数，提高性能 */
+- (CGFloat)tableView:(UITableView *)tableView estimatedHeightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    
+    return 80;
+}
+
+/****  单元个的点击事件  **/
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
+{
+    // 刚选中又马上取消选中，格子不变色
+    [tableView deselectRowAtIndexPath:indexPath animated:YES];
+    
+    XWNewsFrameModel *frameModel=self.arrayList[indexPath.row];
+    XWNewsModel *newsModel=frameModel.newsModel;
+    if(newsModel.imgextra.count){
+        XWPhotoController *photoVc=[[XWPhotoController alloc]init];
+        photoVc.newsModel=newsModel;
+        [self.navigationController pushViewController:photoVc animated:YES];
+       
+    }else{
+        
+        if ([self.navigationController respondsToSelector:@selector(interactivePopGestureRecognizer)]) {
+            self.navigationController.interactivePopGestureRecognizer.delegate = nil;
+        }
+       
+        //取出对应的模型
+        XWNewsFrameModel *frameModel=self.arrayList[indexPath.row];
+        XWDetailContentController *detail=[[XWDetailContentController alloc]init];
+        detail.newsModel=frameModel.newsModel;  //传递模型
+        
+        [self.navigationController pushViewController:detail animated:YES];
+        
+       
+    }
+  
+    
+}
+
+-(void)dealloc
+{
+   // NSLog(@"hhhhh");
+}
+
+@end

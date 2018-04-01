@@ -1,0 +1,35 @@
+//
+//  PrefixHeader.pch
+//  新闻
+//
+//  Created by user on 15/9/4.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#ifndef ___PrefixHeader_pch
+#define ___PrefixHeader_pch
+
+#import "XWCommon.h"
+#import "XWNavController.h"
+#import "MJExtension.h"
+#import "MJRefresh.h"
+#import "XWCommonHttpTool.h"
+#import "UIImageView+WebCache.h"
+#import "UIImage+CH.h"
+#import "UIView+MJ.h"
+#import "XWBaseMethod.h"
+#import "MBProgressHUD.h"
+#import "NSDate+CH.h"
+#import "Reachability.h"
+
+#import "FMDatabase.h"
+#import "FMDatabaseQueue.h"
+//断网的情况下
+#import "XWNetworkLabel.h"
+//数据缓存
+#import "XWDataCacheTool.h"
+
+
+
+
+#endif

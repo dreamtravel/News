@@ -1,0 +1,33 @@
+//
+//  XWNewsShowController.m
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWNewsShowController.h"
+
+@interface XWNewsShowController ()
+
+@end
+
+@implementation XWNewsShowController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    NSLog(@"viewDidLoad");
+    
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    self.view.backgroundColor=XWRandomColor;
+    NSLog(@"viewWillAppear");
+}
+
+
+
+@end

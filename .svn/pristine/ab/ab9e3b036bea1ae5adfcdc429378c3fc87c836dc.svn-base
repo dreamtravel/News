@@ -1,0 +1,16 @@
+//
+//  XWHttpTool.h
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import <Foundation/Foundation.h>
+
+
+@interface XWHttpTool : NSObject
+
++ (void)getWithUrl:(NSString*)str parms:(NSDictionary*)parms success:(void(^)(id json))success failture:(void(^)(id error))failture ;
+
+@end

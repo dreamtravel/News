@@ -1,0 +1,17 @@
+//
+//  XWNewsShowController.h
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import <UIKit/UIKit.h>
+
+@interface XWNewsShowController : UIViewController
+
+@property (nonatomic,assign) NSInteger index;
+
+@property (nonatomic,copy) NSString *urlString;
+
+@end

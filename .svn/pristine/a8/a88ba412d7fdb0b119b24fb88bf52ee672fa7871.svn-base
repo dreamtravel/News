@@ -1,0 +1,49 @@
+//
+//  XWNewsShowController.m
+//  新闻
+//
+//  Created by user on 15/10/1.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWNewsShowController.h"
+#import "XWHttpTool.h"
+
+@interface XWNewsShowController ()
+
+@end
+
+@implementation XWNewsShowController
+
+- (void)viewDidLoad {
+    [super viewDidLoad];
+    NSLog(@"viewDidLoad");
+    
+    [self loadData];
+}
+
+-(void)viewWillAppear:(BOOL)animated
+{
+    [super viewWillAppear:animated];
+    
+    self.view.backgroundColor=XWRandomColor;
+    NSLog(@"viewWillAppear");
+}
+
+/*
+   下拉刷新
+ */
+-(void)loadData
+{
+    NSString *url = [NSString stringWithFormat:@"/nc/article/%@/0-20.html",self.urlString];
+    
+    [XWHttpTool getWithUrl:url parms:nil success:^(id json) {
+        NSLog(@"%@",json);
+    } failture:^(id error) {
+        NSLog(@"%@",error);
+    }];
+    
+}
+
+
+@end

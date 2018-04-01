@@ -1,0 +1,41 @@
+//
+//  XWDetailModel.m
+//  新闻
+//
+//  Created by user on 15/10/3.
+//  Copyright (c) 2015年 user. All rights reserved.
+//
+
+#import "XWDetailModel.h"
+#import "XWDetailImgModel.h"
+
+@implementation XWDetailModel
+
+
+
++(instancetype)initWithDict:(NSDictionary *)dict
+{
+    XWDetailModel *detailModel=[[XWDetailModel alloc]init];
+    detailModel.title = dict[@"title"];
+    detailModel.ptime = dict[@"ptime"];
+    detailModel.body = dict[@"body"];
+    detailModel.source=dict[@"source"];
+    
+    NSArray *imgArr=dict[@"img"];
+    NSMutableArray *tempArr=[NSMutableArray arrayWithCapacity:imgArr.count];
+    if(imgArr){
+        for (NSDictionary *dic in imgArr) {
+            XWDetailImgModel *imgModel=[XWDetailImgModel initWithDict:dic];
+            [tempArr addObject:imgModel];
+            
+        }
+    }
+    
+    detailModel.img=tempArr; 
+    
+    return detailModel;
+}
+
+
+
+@end
